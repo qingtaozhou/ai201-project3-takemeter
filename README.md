@@ -82,6 +82,63 @@ Specific wrong-prediction patterns:
 
 These errors are more about boundary difficulty than random failure. The labels are conceptually meaningful, but the dataset needs more paired examples where the topic is similar and only the discourse function changes. For example, several posts about a SpaceX IPO should show all four labels: a headline-only update, a reasoned ETF-rebalance analysis, a bullish moonshot post, and a skeptical overvaluation warning.
 
+## Stretch Feature: Error Pattern Analysis
+
+I completed the error pattern analysis stretch feature. The systematic pattern is that the model struggles most when a post contains evidence-like language but the discourse function is not obvious.
+
+From the 30-example test set, the fine-tuned model made 7 mistakes. Five of those 7 mistakes involved either `evidence_analysis` or `speculative_hype`, and 3 of the 7 were direct confusions between those two labels:
+
+| Error Type | Count |
+|---|---:|
+| `evidence_analysis` -> `speculative_hype` | 2 |
+| `speculative_hype` -> `evidence_analysis` | 1 |
+| `evidence_analysis` -> `information_update` | 1 |
+| `information_update` -> `speculative_hype` | 1 |
+| `speculative_hype` -> `information_update` | 1 |
+| `speculative_hype` -> `risk_skepticism` | 1 |
+
+The pattern is not simply that one class is weak. `risk_skepticism` was perfect on the test set, and `information_update` was mostly correct. The model's real weakness is posts that look factual on the surface but require judging how the evidence is being used. A post about SpaceX, ETFs, contracts, revenue, or valuation can be an update, an analysis, or hype depending on whether it merely reports a fact, reasons from the fact, or uses the fact as decoration for a dramatic claim.
+
+The fix would be to collect more contrastive examples: pairs or small groups of posts about the same event with different labels. For example, a SpaceX IPO headline-only post, a post analyzing ETF rebalancing, a bullish unsupported price-target post, and a skeptical valuation warning would teach the model that topic words are not enough.
+
+## Stretch Feature: Deployed Interface
+
+I also added a simple local interface in [app.py](app.py). It accepts a new post, predicts one of the four labels, and displays the label plus confidence scores for all classes.
+
+The interface uses `fine_tuned_model/config.json` as the reference for the label mapping. It then tries to load the fine-tuned Hugging Face model from `fine_tuned_model/`. With `fine_tuned_model/model.safetensors` present and the packages in [requirements.txt](requirements.txt) installed, the app runs true fine-tuned DistilBERT inference. If the saved model cannot be loaded, the app falls back to a lightweight Naive Bayes text classifier trained from [data/labeled_examples.csv](data/labeled_examples.csv) at startup.
+
+Install model inference dependencies with:
+
+```bash
+pip install -r requirements.txt
+```
+
+Run it with:
+
+```bash
+python3 app.py
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000
+```
+
+You can also test the classifier from the command line:
+
+```bash
+python3 app.py --self-test
+```
+
+The app exposes a small JSON endpoint as well:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/predict \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"ASTS is going to $100 after the next launch."}'
+```
+
 ## Sample Classifications
 
 The saved artifacts do not include per-example confidence scores, so the table below uses representative examples and the expected label behavior. To fully satisfy a production-style report, the notebook should save a `sample_predictions.csv` with text, predicted label, true label, and confidence.
@@ -118,6 +175,7 @@ I used AI assistance in several specific ways:
 | File | Purpose |
 |---|---|
 | [planning.md](planning.md) | Working design notes, labels, edge cases, data plan, metrics plan, and AI tool plan. |
+| [app.py](app.py) | Local web interface for classifying a new post and displaying confidence. |
 | [data/labeled_examples.csv](data/labeled_examples.csv) | Single labeled dataset used for model training and evaluation. |
 | [evaluation_results.json](evaluation_results.json) | Saved aggregate evaluation results. |
 | [confusion_matrix.png](confusion_matrix.png) | Fine-tuned model confusion matrix image. |

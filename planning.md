@@ -114,3 +114,15 @@ If the LLM frequently disagrees with me on a label, I will not automatically tru
 After evaluating the model, I will give an AI tool a list of wrong predictions with the post text, true label, predicted label, and my brief notes. I will ask it to identify repeated error patterns, such as hype being mistaken for analysis when a post includes one statistic, or risk-focused analysis being confused with general skepticism.
 
 I will verify any AI-suggested pattern myself by checking the actual examples and the confusion matrix. The AI tool can help generate hypotheses, but I will only report patterns that are supported by the model's errors and my manual review.
+
+## Stretch Feature Plan: Error Pattern Analysis
+
+For the stretch feature, I will go beyond listing individual wrong predictions and identify a systematic error pattern from the fine-tuned model. I will use the fine-tuned confusion matrix to quantify which label boundaries caused the most mistakes, then connect those mistakes back to the label definitions and annotation notes.
+
+The analysis will focus on whether the model confuses `evidence_analysis` with `speculative_hype` or `information_update` when posts contain evidence-like words such as launch, contract, revenue, ETF, SpaceX, valuation, or NASA. I will report the pattern in `README.md`, explain why the boundary is hard, and describe what additional data would be needed to reduce that failure mode.
+
+## Stretch Feature Plan: Deployed Interface
+
+For the deployed interface stretch feature, I will build a simple local web app that accepts a new post, predicts one of the four discourse labels, and displays the predicted label plus confidence. Because the fine-tuned DistilBERT model files are not committed in this repo, the interface will train a lightweight local text classifier from `data/labeled_examples.csv` when it starts.
+
+The interface will use only Python standard-library modules so it can run without extra dependency installation. I will document the run command in `README.md` and commit the interface code with the project files.

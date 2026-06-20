@@ -12,5 +12,8 @@ env/
 # Jupyter
 .ipynb_checkpoints/
 
+# Model artifacts
+fine_tuned_model/
+
 # macOS
 .DS_Store
